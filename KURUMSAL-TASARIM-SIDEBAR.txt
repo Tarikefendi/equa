@@ -1,0 +1,88 @@
+=== SIDEBAR İÇİN KURUMSAL TASARIM KODU ===
+
+VS Code'da page.tsx dosyasını aç.
+Ctrl+F ile "Sidebar" ara (veya "space-y-6" ara, sağ taraftaki div)
+
+Sağ taraftaki tüm sidebar kodunu (3 kart: İmza, Hedef, Son İmzalar) 
+aşağıdaki kodla değiştir:
+
+```tsx
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* File Status */}
+            <div className="bg-white border border-gray-200 rounded p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Dosya Bilgileri</h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="text-gray-600">Dosya No:</span>
+                  <p className="font-mono font-medium text-gray-900 mt-1">{fileNumber}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Durum:</span>
+                  <p className="font-medium text-gray-900 mt-1">
+                    {campaign.sent_to_organization_at ? 'Kuruma İletildi' : 'Yanıt Bekleniyor'}
+                  </p>
+                </div>
+                {remainingDays !== null && (
+                  <div>
+                    <span className="text-gray-600">Kalan Süre:</span>
+                    <p className="font-medium text-gray-900 mt-1">{remainingDays} Gün</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Target Info */}
+            <div className="bg-white border border-gray-200 rounded p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Hedef Kuruluş</h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-gray-600">Kuruluş:</span>
+                  <p className="font-medium text-gray-900 mt-1">{campaign.target_entity}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Tip:</span>
+                  <p className="font-medium text-gray-900 mt-1">
+                    {campaign.target_type === 'company'
+                      ? 'Şirket'
+                      : campaign.target_type === 'brand'
+                      ? 'Marka'
+                      : 'Hükümet'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Supporters */}
+            {signatures.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded p-5">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Son Destekleyenler</h3>
+                <div className="space-y-3">
+                  {signatures.slice(0, 5).map((sig: any) => (
+                    <div key={sig.id} className="flex items-center gap-2 text-sm">
+                      <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-medium flex-shrink-0">
+                        {sig.is_anonymous ? '?' : sig.username?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-900 truncate">
+                          {sig.is_anonymous ? 'Anonim' : sig.username}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(sig.created_at).toLocaleDateString('tr-TR')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+```
+
+ADIMLAR:
+1. VS Code'da page.tsx'i aç
+2. Ctrl+F ile "Sidebar" ara (yorum satırı olarak var)
+3. Sidebar div'ini bul (başlangıç: <div className="space-y-6">)
+4. Sidebar'ın tamamını seç (3 kart: İmza, Hedef, Son İmzalar)
+5. Yukarıdaki kodu yapıştır
+6. Ctrl+S ile kaydet

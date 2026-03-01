@@ -1,0 +1,5 @@
+Bu dosyayı page.tsx olarak kaydet!
+
+İçeriği kopyala ve page.tsx'e yapıştır.
+
+Veya bu dosyayı page.tsx olarak yeniden adlandır.

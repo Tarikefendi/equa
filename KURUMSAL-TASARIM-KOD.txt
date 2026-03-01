@@ -1,0 +1,23 @@
+=== KURUMSAL TASARIM - TAM KOD ===
+
+Bu kodu kopyala ve frontend/app/campaigns/[id]/page.tsx dosyasına yapıştır.
+
+ADIMLAR:
+1. VS Code'da page.tsx dosyasını aç
+2. Ctrl+A (tümünü seç)
+3. Delete (sil)
+4. Aşağıdaki kodu kopyala
+5. Ctrl+V (yapıştır)
+6. Ctrl+S (kaydet)
+
+=== KOD BAŞLANGIÇ ===
+
+Kod çok uzun olduğu için, şunu yap:
+
+1. VS Code'da page.tsx'i aç
+2. Satır 12'yi bul: export default function CampaignDetailV2()
+3. Bunu değiştir: export default function CampaignDetailPage()
+
+Sonra ben sana küçük değişiklikler vereceğim, onları tek tek uygula.
+
+Hazır mısın?

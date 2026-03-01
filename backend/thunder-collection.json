@@ -1,0 +1,269 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Boycott Platform API",
+  "collectionId": "boycott-platform",
+  "dateExported": "2026-01-31",
+  "version": "1.0",
+  "folders": [
+    {
+      "id": "auth",
+      "name": "Authentication",
+      "requests": []
+    },
+    {
+      "id": "campaigns",
+      "name": "Campaigns",
+      "requests": []
+    },
+    {
+      "id": "votes",
+      "name": "Votes",
+      "requests": []
+    },
+    {
+      "id": "comments",
+      "name": "Comments",
+      "requests": []
+    },
+    {
+      "id": "analytics",
+      "name": "Analytics",
+      "requests": []
+    }
+  ],
+  "requests": [
+    {
+      "id": "1",
+      "name": "Health Check",
+      "url": "http://localhost:3000/api/v1/health",
+      "method": "GET",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "2",
+      "name": "Register User",
+      "url": "http://localhost:3000/api/v1/auth/register",
+      "method": "POST",
+      "folderId": "auth",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"tarik@test.com\",\n  \"username\": \"tarik\",\n  \"password\": \"Tarik123!@#\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "id": "3",
+      "name": "Login",
+      "url": "http://localhost:3000/api/v1/auth/login",
+      "method": "POST",
+      "folderId": "auth",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"tarik@test.com\",\n  \"password\": \"Tarik123!@#\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "set-env-var",
+          "custom": "json.data.token",
+          "action": "setenv",
+          "value": "{{token}}"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "name": "Get Profile",
+      "url": "http://localhost:3000/api/v1/auth/profile",
+      "method": "GET",
+      "folderId": "auth",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "5",
+      "name": "Create Campaign",
+      "url": "http://localhost:3000/api/v1/campaigns",
+      "method": "POST",
+      "folderId": "campaigns",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Test Kampanyası\",\n  \"description\": \"Bu bir test kampanyasıdır\",\n  \"target_entity\": \"Test Şirketi\",\n  \"target_type\": \"company\",\n  \"category\": \"environment\",\n  \"tags\": [\"test\", \"çevre\"]\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "set-env-var",
+          "custom": "json.data.id",
+          "action": "setenv",
+          "value": "{{campaignId}}"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "name": "Get All Campaigns",
+      "url": "http://localhost:3000/api/v1/campaigns",
+      "method": "GET",
+      "folderId": "campaigns",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "7",
+      "name": "Get Campaign by ID",
+      "url": "http://localhost:3000/api/v1/campaigns/{{campaignId}}",
+      "method": "GET",
+      "folderId": "campaigns",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "8",
+      "name": "Vote on Campaign",
+      "url": "http://localhost:3000/api/v1/votes",
+      "method": "POST",
+      "folderId": "votes",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"campaign_id\": \"{{campaignId}}\",\n  \"vote_choice\": \"support\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "id": "9",
+      "name": "Get Vote Stats",
+      "url": "http://localhost:3000/api/v1/votes/campaign/{{campaignId}}/stats",
+      "method": "GET",
+      "folderId": "votes",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "10",
+      "name": "Create Comment",
+      "url": "http://localhost:3000/api/v1/comments",
+      "method": "POST",
+      "folderId": "comments",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"campaign_id\": \"{{campaignId}}\",\n  \"content\": \"Bu bir test yorumudur\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "id": "11",
+      "name": "Get Campaign Comments",
+      "url": "http://localhost:3000/api/v1/comments/campaign/{{campaignId}}",
+      "method": "GET",
+      "folderId": "comments",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "12",
+      "name": "Platform Analytics",
+      "url": "http://localhost:3000/api/v1/analytics/platform",
+      "method": "GET",
+      "folderId": "analytics",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "13",
+      "name": "Trending Campaigns",
+      "url": "http://localhost:3000/api/v1/analytics/trending",
+      "method": "GET",
+      "folderId": "analytics",
+      "headers": [],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "14",
+      "name": "Get My Badges",
+      "url": "http://localhost:3000/api/v1/badges/my-badges",
+      "method": "GET",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {},
+      "tests": []
+    },
+    {
+      "id": "15",
+      "name": "Get Notifications",
+      "url": "http://localhost:3000/api/v1/notifications",
+      "method": "GET",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {},
+      "tests": []
+    }
+  ]
+}
