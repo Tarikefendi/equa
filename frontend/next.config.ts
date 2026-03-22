@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  bundler: "webpack",
-} as NextConfig;
+const nextConfig: NextConfig = {};
 
-export default nextConfig;
+export default nextConfig;;
