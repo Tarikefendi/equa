@@ -29,7 +29,7 @@ export class NotificationService {
 
   async getUserNotifications(userId: string, unreadOnly: boolean = false) {
     let query = 'SELECT * FROM notifications WHERE user_id = $1';
-    if (unreadOnly) query += ' AND is_read = 0';
+    if (unreadOnly) query += ' AND is_read = false';
     query += ' ORDER BY created_at DESC LIMIT 50';
 
     const result = await pool.query(query, [userId]);
@@ -43,18 +43,18 @@ export class NotificationService {
     if (!notification) throw new Error('Notification not found');
     if (notification.user_id !== userId) throw new Error('Unauthorized');
 
-    await pool.query('UPDATE notifications SET is_read = 1 WHERE id = $1', [notificationId]);
+    await pool.query('UPDATE notifications SET is_read = true WHERE id = $1', [notificationId]);
     return { message: 'Notification marked as read' };
   }
 
   async markAllAsRead(userId: string) {
-    await pool.query('UPDATE notifications SET is_read = 1 WHERE user_id = $1 AND is_read = 0', [userId]);
+    await pool.query('UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false', [userId]);
     return { message: 'All notifications marked as read' };
   }
 
   async getUnreadCount(userId: string) {
     const result = await pool.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND is_read = 0',
+      'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND is_read = false',
       [userId]
     );
     return { count: parseInt(result.rows[0].count) };
