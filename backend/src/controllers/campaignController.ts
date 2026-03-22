@@ -1,10 +1,16 @@
 import { Response } from 'express';
 import { validationResult } from 'express-validator';
 import { CampaignService } from '../services/campaignService';
+import { CampaignImpactService } from '../services/CampaignImpactService';
+import { CampaignMomentumService } from '../services/CampaignMomentumService';
+import { MilestoneService } from '../services/milestoneService';
 import { AuthRequest } from '../types';
 import logger from '../config/logger';
 
 const campaignService = new CampaignService();
+const campaignImpactService = new CampaignImpactService();
+const momentumService = new CampaignMomentumService();
+const milestoneService = new MilestoneService();
 
 export class CampaignController {
   async createCampaign(req: AuthRequest, res: Response): Promise<void> {
@@ -111,7 +117,7 @@ export class CampaignController {
     try {
       const { id } = req.params;
 
-      const campaign = await campaignService.getCampaignById(id);
+      const campaign = await campaignService.getCampaignById(id, req.user?.id);
 
       res.status(200).json({
         success: true,
@@ -236,6 +242,34 @@ export class CampaignController {
     }
   }
 
+  async searchCampaigns(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const q = (req.query.q as string || '').trim();
+      if (!q || q.length < 2) {
+        res.json({ success: true, data: [] });
+        return;
+      }
+      const sort = (req.query.sort as string) || 'relevant';
+      const results = await campaignService.searchCampaigns(q, sort);
+      res.json({ success: true, data: results });
+    } catch (error) {
+      res.status(400).json({ success: false, message: 'Arama başarısız' });
+    }
+  }
+
+  async getTrendingCampaigns(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const campaigns = await campaignService.getTrendingCampaigns();
+      res.status(200).json({ success: true, data: campaigns });
+    } catch (error) {
+      logger.error('Get trending campaigns error:', error);
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get trending campaigns',
+      });
+    }
+  }
+
   async getEmailHistory(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -263,4 +297,86 @@ export class CampaignController {
       });
     }
   }
+
+
+    async updateStatus(req: AuthRequest, res: Response): Promise<void> {
+      try {
+        if (!req.user) { res.status(401).json({ success: false, message: 'Unauthorized' }); return; }
+        const data = await campaignService.updateStatus(req.params.id, req.user.id, req.body.status, req.body.description);
+        res.json({ success: true, data });
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Error';
+        const status = msg === 'Forbidden' ? 403 : 400;
+        res.status(status).json({ success: false, message: msg });
+      }
+    }
+
+    async getStatusHistory(req: AuthRequest, res: Response): Promise<void> {
+      try {
+        const data = await campaignService.getStatusHistory(req.params.id);
+        res.json({ success: true, data });
+      } catch (error) {
+        res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Error' });
+      }
+    }
+
+  async recordView(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+      const ua = (req.headers['user-agent'] || '').substring(0, 64);
+      const userId = req.user?.id;
+      // Logged-in: user ID, anonymous: ip+ua hash
+      const viewerKey = userId ? `u:${userId}` : `ip:${ip}:${ua}`;
+      const result = await campaignService.recordView(id, viewerKey);
+      res.json({ success: true, counted: result.counted });
+    } catch {
+      res.json({ success: true, counted: false });
+    }
+  }
+
+  async getSimilarCampaigns(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { query } = req.query;
+      if (!query || typeof query !== 'string' || query.trim().length < 3) {
+        res.json({ success: true, data: [] });
+        return;
+      }
+      const campaigns = await campaignService.getSimilarCampaigns(query.trim());
+      res.json({ success: true, data: campaigns });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getImpact(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const data = await campaignImpactService.getImpactMetrics(id);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      res.status(404).json({ success: false, message: error.message });
+    }
+  }
+
+  async getMomentum(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const data = await momentumService.getMomentum(id);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getMilestone(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const data = await milestoneService.getMilestoneInfo(id);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
 }

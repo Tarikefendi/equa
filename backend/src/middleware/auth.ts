@@ -3,6 +3,20 @@ import { AuthRequest } from '../types';
 import { verifyAccessToken } from '../utils/jwt';
 import logger from '../config/logger';
 
+export const optionalAuth = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (token) {
+    try {
+      req.user = verifyAccessToken(token);
+    } catch {}
+  }
+  next();
+};
+
 export const authenticate = async (
   req: AuthRequest,
   res: Response,

@@ -14,6 +14,9 @@ import pressReleaseRoutes from './pressReleaseRoutes';
 import organizationResponseRoutes from './organizationResponseRoutes';
 import campaignStatusRoutes from './campaignStatusRoutes';
 import adminRoutes from './adminRoutes';
+import entityRoutes from './entityRoutes';
+import standardsRoutes from './standardsRoutes';
+import lawyerRoutes from './lawyerRoutes';
 
 const router = Router();
 
@@ -42,5 +45,8 @@ router.use('/press-release', pressReleaseRoutes);
 router.use('/organization-responses', organizationResponseRoutes);
 router.use('/campaign-status', campaignStatusRoutes);
 router.use('/admin', adminRoutes);
+router.use('/entities', entityRoutes);
+router.use('/standards', standardsRoutes);
+router.use('/', lawyerRoutes);
 
 export default router;

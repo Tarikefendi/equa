@@ -353,19 +353,65 @@ export class AdminController {
   async rejectLawyer(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { lawyerId } = req.params;
-
       const result = await adminService.rejectLawyer(lawyerId);
-
-      res.status(200).json({
-        success: true,
-        message: result.message,
-      });
+      res.status(200).json({ success: true, message: result.message });
     } catch (error) {
       logger.error('Reject lawyer error:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to reject lawyer',
-      });
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to reject lawyer' });
+    }
+  }
+
+  async getAllEntities(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { EntityService } = await import('../services/entityService');
+      const entityService = new EntityService();
+      const entities = await entityService.getAll();
+      res.status(200).json({ success: true, data: entities });
+    } catch (error) {
+      logger.error('Get all entities error:', error);
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to get entities' });
+    }
+  }
+
+  async verifyEntity(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { entityId } = req.params;
+      const { EntityService } = await import('../services/entityService');
+      const entityService = new EntityService();
+      const entity = await entityService.setVerified(entityId, true);
+      res.status(200).json({ success: true, data: entity });
+    } catch (error) {
+      logger.error('Verify entity error:', error);
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to verify entity' });
+    }
+  }
+
+  async unverifyEntity(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { entityId } = req.params;
+      const { EntityService } = await import('../services/entityService');
+      const entityService = new EntityService();
+      const entity = await entityService.setVerified(entityId, false);
+      res.status(200).json({ success: true, data: entity });
+    } catch (error) {
+      logger.error('Unverify entity error:', error);
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to unverify entity' });
+    }
+  }
+
+  async createInstitutionAccount(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { entityId } = req.params;
+      const { email, password, username } = req.body;
+      if (!email || !password || !username) {
+        res.status(400).json({ success: false, message: 'email, password and username are required' });
+        return;
+      }
+      const result = await adminService.createInstitutionAccount(entityId, email, password, username);
+      res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Create institution account error:', error);
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to create institution account' });
     }
   }
 }

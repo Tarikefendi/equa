@@ -1,33 +1,35 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     email TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'moderator', 'admin')),
     is_verified INTEGER DEFAULT 0,
     reputation_score INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- User Profiles Table
 CREATE TABLE IF NOT EXISTS user_profiles (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     full_name TEXT,
     bio TEXT,
     avatar_url TEXT,
     country TEXT,
     language TEXT DEFAULT 'en',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Campaigns Table
 CREATE TABLE IF NOT EXISTS campaigns (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     creator_id TEXT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -37,23 +39,23 @@ CREATE TABLE IF NOT EXISTS campaigns (
     category TEXT NOT NULL,
     tags TEXT,
     status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'under_review', 'active', 'concluded')),
-    start_date DATETIME,
-    end_date DATETIME,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
     goals TEXT,
     evidence TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Votes Table
 CREATE TABLE IF NOT EXISTS votes (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     vote_choice TEXT NOT NULL,
     vote_hash TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(campaign_id, user_id)
@@ -61,36 +63,36 @@ CREATE TABLE IF NOT EXISTS votes (
 
 -- Refresh Tokens Table
 CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     token TEXT UNIQUE NOT NULL,
-    expires_at DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Verification Tokens Table
 CREATE TABLE IF NOT EXISTS verification_tokens (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     token TEXT UNIQUE NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('email_verification', 'password_reset')),
-    expires_at DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Comments Table
 CREATE TABLE IF NOT EXISTS comments (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     parent_id TEXT,
     content TEXT NOT NULL,
     is_edited INTEGER DEFAULT 0,
     is_deleted INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
@@ -98,28 +100,28 @@ CREATE TABLE IF NOT EXISTS comments (
 
 -- User Roles & Permissions Table
 CREATE TABLE IF NOT EXISTS role_permissions (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     role TEXT NOT NULL CHECK (role IN ('user', 'moderator', 'admin')),
     permission TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(role, permission)
 );
 
 -- Activity Log Table
 CREATE TABLE IF NOT EXISTS activity_logs (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     action_type TEXT NOT NULL,
     entity_type TEXT NOT NULL,
     entity_id TEXT,
     details TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Uploads Table
 CREATE TABLE IF NOT EXISTS uploads (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     entity_type TEXT NOT NULL,
     entity_id TEXT NOT NULL,
@@ -128,13 +130,13 @@ CREATE TABLE IF NOT EXISTS uploads (
     mimetype TEXT NOT NULL,
     size INTEGER NOT NULL,
     url TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Notifications Table
 CREATE TABLE IF NOT EXISTS notifications (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     type TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -142,13 +144,13 @@ CREATE TABLE IF NOT EXISTS notifications (
     entity_type TEXT,
     entity_id TEXT,
     is_read INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Reports Table
 CREATE TABLE IF NOT EXISTS reports (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     reporter_id TEXT NOT NULL,
     entity_type TEXT NOT NULL,
     entity_id TEXT NOT NULL,
@@ -156,40 +158,40 @@ CREATE TABLE IF NOT EXISTS reports (
     description TEXT,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewing', 'resolved', 'rejected')),
     reviewed_by TEXT,
-    reviewed_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- User Badges Table
 CREATE TABLE IF NOT EXISTS user_badges (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     badge_type TEXT NOT NULL,
     badge_name TEXT NOT NULL,
     badge_description TEXT,
-    earned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Campaign Milestones Table
 CREATE TABLE IF NOT EXISTS campaign_milestones (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     target_value INTEGER NOT NULL,
     current_value INTEGER DEFAULT 0,
     is_completed INTEGER DEFAULT 0,
-    completed_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 );
 
 -- Campaign Status Updates Table
 CREATE TABLE IF NOT EXISTS campaign_status_updates (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     status_type TEXT NOT NULL CHECK (status_type IN ('in_progress', 'legal_action', 'court_filed', 'hearing_scheduled', 'won', 'partially_won', 'rejected', 'settled', 'other')),
@@ -197,18 +199,18 @@ CREATE TABLE IF NOT EXISTS campaign_status_updates (
     description TEXT,
     documents TEXT,
     is_milestone INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Campaign Followers Table
 CREATE TABLE IF NOT EXISTS campaign_followers (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(campaign_id, user_id)
@@ -216,13 +218,13 @@ CREATE TABLE IF NOT EXISTS campaign_followers (
 
 -- Share Clicks Table
 CREATE TABLE IF NOT EXISTS share_clicks (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     platform TEXT NOT NULL,
     referrer TEXT,
     ip_address TEXT,
     user_agent TEXT,
-    clicked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    clicked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 );
 
@@ -241,7 +243,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 
 -- Lawyers Table
 CREATE TABLE IF NOT EXISTS lawyers (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL UNIQUE,
     full_name TEXT NOT NULL,
     bar_number TEXT NOT NULL,
@@ -252,30 +254,30 @@ CREATE TABLE IF NOT EXISTS lawyers (
     city TEXT,
     is_verified INTEGER DEFAULT 0,
     is_available INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Lawyer Campaign Matches Table
 CREATE TABLE IF NOT EXISTS lawyer_campaign_matches (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     lawyer_id TEXT NOT NULL,
     campaign_id TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
     message TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (lawyer_id) REFERENCES lawyers(id) ON DELETE CASCADE,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 );
 
 -- User Bans Table
 CREATE TABLE IF NOT EXISTS user_bans (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     reason TEXT NOT NULL,
     banned_by TEXT NOT NULL,
-    banned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    unbanned_at DATETIME,
+    banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    unbanned_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (banned_by) REFERENCES users(id)
 );
@@ -318,13 +320,13 @@ CREATE INDEX IF NOT EXISTS idx_user_bans_date ON user_bans(banned_at);
 
 -- Signatures Table (for petition-style campaigns)
 CREATE TABLE IF NOT EXISTS signatures (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     message TEXT,
     is_anonymous INTEGER DEFAULT 0,
     ip_address TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(campaign_id, user_id)
@@ -334,35 +336,12 @@ CREATE INDEX IF NOT EXISTS idx_signatures_campaign ON signatures(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_signatures_user ON signatures(user_id);
 CREATE INDEX IF NOT EXISTS idx_signatures_created ON signatures(created_at);
 
--- Triggers for updated_at
-CREATE TRIGGER IF NOT EXISTS update_users_updated_at 
-AFTER UPDATE ON users
-BEGIN
-    UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
 
-CREATE TRIGGER IF NOT EXISTS update_user_profiles_updated_at 
-AFTER UPDATE ON user_profiles
-BEGIN
-    UPDATE user_profiles SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_campaigns_updated_at 
-AFTER UPDATE ON campaigns
-BEGIN
-    UPDATE campaigns SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_comments_updated_at 
-AFTER UPDATE ON comments
-BEGIN
-    UPDATE comments SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
 
 
 -- Email History Table
 CREATE TABLE IF NOT EXISTS email_history (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     recipient_email TEXT NOT NULL,
     email_type TEXT NOT NULL CHECK (email_type IN ('campaign_notification', 'manual_send', 'milestone')),
@@ -370,7 +349,7 @@ CREATE TABLE IF NOT EXISTS email_history (
     content TEXT NOT NULL,
     signature_count INTEGER DEFAULT 0,
     sent_by TEXT,
-    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (sent_by) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -381,7 +360,7 @@ CREATE INDEX IF NOT EXISTS idx_email_history_sent_at ON email_history(sent_at);
 
 -- Organization Responses Table
 CREATE TABLE IF NOT EXISTS organization_responses (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     organization_name TEXT NOT NULL,
     organization_email TEXT NOT NULL,
@@ -389,8 +368,8 @@ CREATE TABLE IF NOT EXISTS organization_responses (
     response_type TEXT NOT NULL CHECK (response_type IN ('official', 'statement', 'action_taken')),
     contact_person TEXT,
     is_verified INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 );
 
@@ -400,18 +379,18 @@ CREATE INDEX IF NOT EXISTS idx_organization_responses_verified ON organization_r
 
 -- Legal Applications Table
 CREATE TABLE IF NOT EXISTS legal_applications (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     application_type TEXT NOT NULL CHECK (application_type IN ('echr', 'un_human_rights', 'icc', 'national_court', 'other')),
     application_status TEXT DEFAULT 'draft' CHECK (application_status IN ('draft', 'submitted', 'under_review', 'accepted', 'rejected')),
     application_data TEXT NOT NULL,
     documents TEXT,
-    submission_date DATETIME,
+    submission_date TIMESTAMP,
     case_number TEXT,
     notes TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -428,7 +407,7 @@ CREATE INDEX IF NOT EXISTS idx_legal_applications_type ON legal_applications(app
 
 -- Community Posts Table (Campaign-focused discussions)
 CREATE TABLE IF NOT EXISTS community_posts (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     campaign_id TEXT NOT NULL, -- REQUIRED: Every post must be linked to a campaign
     content TEXT NOT NULL CHECK (length(content) <= 500), -- Max 500 characters
@@ -437,9 +416,9 @@ CREATE TABLE IF NOT EXISTS community_posts (
     hashtags TEXT, -- JSON array of hashtags
     is_pinned INTEGER DEFAULT 0,
     is_edited INTEGER DEFAULT 0,
-    edited_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    edited_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES community_posts(id) ON DELETE CASCADE
@@ -452,10 +431,10 @@ CREATE INDEX IF NOT EXISTS idx_community_posts_created ON community_posts(create
 
 -- Post Likes Table
 CREATE TABLE IF NOT EXISTS post_likes (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     post_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(post_id, user_id)
@@ -466,10 +445,10 @@ CREATE INDEX IF NOT EXISTS idx_post_likes_user ON post_likes(user_id);
 
 -- Post Bookmarks Table
 CREATE TABLE IF NOT EXISTS post_bookmarks (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     post_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(post_id, user_id)
@@ -480,12 +459,12 @@ CREATE INDEX IF NOT EXISTS idx_post_bookmarks_user ON post_bookmarks(user_id);
 
 -- Hashtags Table
 CREATE TABLE IF NOT EXISTS hashtags (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     name TEXT UNIQUE NOT NULL,
     usage_count INTEGER DEFAULT 0,
     trending_score REAL DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    last_used_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_hashtags_name ON hashtags(name);
@@ -494,10 +473,10 @@ CREATE INDEX IF NOT EXISTS idx_hashtags_usage ON hashtags(usage_count DESC);
 
 -- User Follows Table
 CREATE TABLE IF NOT EXISTS user_follows (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     follower_id TEXT NOT NULL,
     following_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(follower_id, following_id),
@@ -509,7 +488,7 @@ CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_
 
 -- Polls Table (Campaign-focused polls)
 CREATE TABLE IF NOT EXISTS polls (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id TEXT NOT NULL,
     campaign_id TEXT NOT NULL, -- REQUIRED: Every poll must be linked to a campaign
     question TEXT NOT NULL,
@@ -519,8 +498,8 @@ CREATE TABLE IF NOT EXISTS polls (
     is_anonymous INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'closed', 'draft')),
     total_votes INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ends_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ends_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 );
@@ -532,7 +511,7 @@ CREATE INDEX IF NOT EXISTS idx_polls_ends_at ON polls(ends_at);
 
 -- Poll Options Table
 CREATE TABLE IF NOT EXISTS poll_options (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     poll_id TEXT NOT NULL,
     option_text TEXT NOT NULL,
     vote_count INTEGER DEFAULT 0,
@@ -544,11 +523,11 @@ CREATE INDEX IF NOT EXISTS idx_poll_options_poll ON poll_options(poll_id);
 
 -- Poll Votes Table
 CREATE TABLE IF NOT EXISTS poll_votes (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     poll_id TEXT NOT NULL,
     option_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
     FOREIGN KEY (option_id) REFERENCES poll_options(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -561,7 +540,7 @@ CREATE INDEX IF NOT EXISTS idx_poll_votes_option ON poll_votes(option_id);
 
 -- Success Stories Table
 CREATE TABLE IF NOT EXISTS success_stories (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     campaign_id TEXT NOT NULL,
     title TEXT NOT NULL,
     summary TEXT NOT NULL,
@@ -572,8 +551,8 @@ CREATE TABLE IF NOT EXISTS success_stories (
     featured_image TEXT,
     is_featured INTEGER DEFAULT 0,
     views INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    published_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    published_at TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 );
 
@@ -583,11 +562,11 @@ CREATE INDEX IF NOT EXISTS idx_success_stories_published ON success_stories(publ
 
 -- Story Reactions Table
 CREATE TABLE IF NOT EXISTS story_reactions (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
     story_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     reaction_type TEXT NOT NULL CHECK (reaction_type IN ('inspiring', 'helpful', 'amazing')),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (story_id) REFERENCES success_stories(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(story_id, user_id)

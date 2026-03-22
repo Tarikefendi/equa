@@ -159,7 +159,7 @@ export default function CampaignDetailPage() {
 
   const shareOnSocial = (platform: string) => {
     const url = window.location.href;
-    const text = `${campaign?.title} - Boykot Platformu`;
+    const text = `${campaign?.title} - EQUA`;
     
     const urls: any = {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,

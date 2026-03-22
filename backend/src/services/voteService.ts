@@ -1,4 +1,4 @@
-import db from '../config/database';
+import pool from '../config/database';
 import { randomBytes } from 'crypto';
 import logger from '../config/logger';
 import { NotificationService } from './notificationService';
@@ -12,129 +12,91 @@ interface CreateVoteDTO {
 
 export class VoteService {
   async castVote(userId: string, data: CreateVoteDTO) {
-    // Check if campaign exists
-    const campaign = db.prepare('SELECT id, status FROM campaigns WHERE id = ?').get(data.campaign_id) as any;
-    if (!campaign) {
-      throw new Error('Campaign not found');
-    }
+    const campaignResult = await pool.query('SELECT id, status FROM campaigns WHERE id = $1', [data.campaign_id]);
+    const campaign = campaignResult.rows[0];
 
-    if (campaign.status !== 'active') {
-      throw new Error('Can only vote on active campaigns');
-    }
+    if (!campaign) throw new Error('Campaign not found');
+    if (campaign.status !== 'active') throw new Error('Can only vote on active campaigns');
 
-    // Check if user already voted
-    const existingVote = db.prepare(
-      'SELECT id, vote_choice FROM votes WHERE campaign_id = ? AND user_id = ?'
-    ).get(data.campaign_id, userId) as any;
+    const existingResult = await pool.query(
+      'SELECT id, vote_choice FROM votes WHERE campaign_id = $1 AND user_id = $2',
+      [data.campaign_id, userId]
+    );
+    const existingVote = existingResult.rows[0];
 
     if (existingVote) {
-      // Update existing vote
-      db.prepare(
-        'UPDATE votes SET vote_choice = ? WHERE id = ?'
-      ).run(data.vote_choice, existingVote.id);
-
+      await pool.query('UPDATE votes SET vote_choice = $1 WHERE id = $2', [data.vote_choice, existingVote.id]);
       logger.info(`Vote updated: ${existingVote.id} by user ${userId}`);
-
-      return {
-        message: 'Vote updated successfully',
-        vote_choice: data.vote_choice,
-        is_new: false,
-      };
+      return { message: 'Vote updated successfully', vote_choice: data.vote_choice, is_new: false };
     }
 
-    // Create new vote
     const voteId = randomBytes(16).toString('hex');
     const voteHash = randomBytes(32).toString('hex');
 
-    db.prepare(
-      `INSERT INTO votes (id, campaign_id, user_id, vote_choice, vote_hash)
-       VALUES (?, ?, ?, ?, ?)`
-    ).run(voteId, data.campaign_id, userId, data.vote_choice, voteHash);
+    await pool.query(
+      `INSERT INTO votes (id, campaign_id, user_id, vote_choice, vote_hash) VALUES ($1, $2, $3, $4, $5)`,
+      [voteId, data.campaign_id, userId, data.vote_choice, voteHash]
+    );
 
     logger.info(`Vote created: ${voteId} by user ${userId}`);
 
-    // Get campaign creator to send notification
-    const campaignData = db.prepare(
-      'SELECT creator_id FROM campaigns WHERE id = ?'
-    ).get(data.campaign_id) as any;
+    const campaignDataResult = await pool.query('SELECT creator_id FROM campaigns WHERE id = $1', [data.campaign_id]);
+    const campaignData = campaignDataResult.rows[0];
 
-    // Send notification to campaign creator (if not voting on own campaign)
     if (campaignData && campaignData.creator_id !== userId) {
       await notificationService.notifyNewVote(data.campaign_id, campaignData.creator_id);
     }
 
-    return {
-      message: 'Vote cast successfully',
-      vote_choice: data.vote_choice,
-      is_new: true,
-    };
+    return { message: 'Vote cast successfully', vote_choice: data.vote_choice, is_new: true };
   }
 
   async removeVote(campaignId: string, userId: string) {
-    const vote = db.prepare(
-      'SELECT id FROM votes WHERE campaign_id = ? AND user_id = ?'
-    ).get(campaignId, userId) as any;
+    const result = await pool.query(
+      'SELECT id FROM votes WHERE campaign_id = $1 AND user_id = $2',
+      [campaignId, userId]
+    );
+    const vote = result.rows[0];
 
-    if (!vote) {
-      throw new Error('Vote not found');
-    }
+    if (!vote) throw new Error('Vote not found');
 
-    db.prepare('DELETE FROM votes WHERE id = ?').run(vote.id);
-
+    await pool.query('DELETE FROM votes WHERE id = $1', [vote.id]);
     logger.info(`Vote removed: ${vote.id}`);
-
     return { message: 'Vote removed successfully' };
   }
 
   async getVoteStats(campaignId: string) {
-    const stats = db.prepare(
-      `SELECT 
-        vote_choice,
-        COUNT(*) as count
-       FROM votes
-       WHERE campaign_id = ?
-       GROUP BY vote_choice`
-    ).all(campaignId) as any[];
+    const statsResult = await pool.query(
+      `SELECT vote_choice, COUNT(*) as count FROM votes WHERE campaign_id = $1 GROUP BY vote_choice`,
+      [campaignId]
+    );
 
-    const total = db.prepare(
-      'SELECT COUNT(*) as count FROM votes WHERE campaign_id = ?'
-    ).get(campaignId) as any;
+    const totalResult = await pool.query(
+      'SELECT COUNT(*) as count FROM votes WHERE campaign_id = $1',
+      [campaignId]
+    );
 
-    const result: any = {
-      total: total.count,
-      support: 0,
-      oppose: 0,
-      neutral: 0,
-    };
-
-    stats.forEach((stat) => {
-      result[stat.vote_choice] = stat.count;
-    });
-
+    const result: any = { total: parseInt(totalResult.rows[0].count), support: 0, oppose: 0, neutral: 0 };
+    statsResult.rows.forEach((stat: any) => { result[stat.vote_choice] = parseInt(stat.count); });
     return result;
   }
 
   async getUserVote(campaignId: string, userId: string) {
-    const vote = db.prepare(
-      'SELECT vote_choice, created_at FROM votes WHERE campaign_id = ? AND user_id = ?'
-    ).get(campaignId, userId) as any;
-
-    if (!vote) {
-      return null;
-    }
-
-    return vote;
+    const result = await pool.query(
+      'SELECT vote_choice, created_at FROM votes WHERE campaign_id = $1 AND user_id = $2',
+      [campaignId, userId]
+    );
+    return result.rows[0] || null;
   }
 
   async getCampaignVoters(campaignId: string) {
-    const voters = db.prepare(
+    const result = await pool.query(
       `SELECT v.vote_choice, v.created_at, u.username, u.reputation_score
        FROM votes v
        LEFT JOIN users u ON v.user_id = u.id
-       WHERE v.campaign_id = ?
-       ORDER BY v.created_at DESC`
-    ).all(campaignId);
-
-    return voters;
+       WHERE v.campaign_id = $1
+       ORDER BY v.created_at DESC`,
+      [campaignId]
+    );
+    return result.rows;
   }
 }

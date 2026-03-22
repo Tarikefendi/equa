@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Boykot Platform",
+  title: "EQUA",
   description: "Haksızlıklara karşı sesini yükselt",
 };
 

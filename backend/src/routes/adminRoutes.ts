@@ -1,11 +1,17 @@
 import { Router, Response } from 'express';
 import { AdminController } from '../controllers/adminController';
+import { CampaignReportController } from '../controllers/campaignReportController';
+import { StandardsController } from '../controllers/standardsController';
+import { EvidenceModerationController } from '../controllers/evidenceModerationController';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleCheck';
 import { AuthRequest } from '../types';
 
 const router = Router();
 const adminController = new AdminController();
+const reportController = new CampaignReportController();
+const standardsController = new StandardsController();
+const evidenceModerationController = new EvidenceModerationController();
 
 // All admin routes require authentication and moderator/admin role
 const moderatorAuth = [authenticate, requireRole(['moderator', 'admin'])];
@@ -63,6 +69,15 @@ router.put('/reports/:reportId/status', moderatorAuth, (req: AuthRequest, res: R
   adminController.updateReportStatus(req, res)
 );
 
+// Campaign Report Management
+router.get('/campaign-reports', moderatorAuth, (req: AuthRequest, res: Response) =>
+  reportController.getPendingReports(req, res)
+);
+
+router.patch('/campaign-reports/:reportId', moderatorAuth, (req: AuthRequest, res: Response) =>
+  reportController.updateStatus(req, res)
+);
+
 // Lawyer Management
 router.get('/lawyers/pending', moderatorAuth, (req: AuthRequest, res: Response) => 
   adminController.getPendingLawyers(req, res)
@@ -74,6 +89,37 @@ router.post('/lawyers/:lawyerId/verify', moderatorAuth, (req: AuthRequest, res: 
 
 router.post('/lawyers/:lawyerId/reject', moderatorAuth, (req: AuthRequest, res: Response) => 
   adminController.rejectLawyer(req, res)
+);
+
+// Entity Management
+router.get('/entities', moderatorAuth, (req: AuthRequest, res: Response) =>
+  adminController.getAllEntities(req, res)
+);
+
+router.post('/entities/:entityId/verify', moderatorAuth, (req: AuthRequest, res: Response) =>
+  adminController.verifyEntity(req, res)
+);
+
+router.post('/entities/:entityId/unverify', moderatorAuth, (req: AuthRequest, res: Response) =>
+  adminController.unverifyEntity(req, res)
+);
+
+router.post('/entities/:entityId/institution-account', adminAuth, (req: AuthRequest, res: Response) =>
+  adminController.createInstitutionAccount(req, res)
+);
+
+// Standards Suggestion Management
+router.get('/standard-suggestions', moderatorAuth, (req: AuthRequest, res: Response) =>
+  standardsController.getSuggestions(req, res)
+);
+
+router.patch('/standard-suggestions/:id', moderatorAuth, (req: AuthRequest, res: Response) =>
+  standardsController.reviewSuggestion(req, res)
+);
+
+// Flagged Evidence Management
+router.get('/flagged-evidence', moderatorAuth, (req: AuthRequest, res: Response) =>
+  evidenceModerationController.getFlagged(req, res)
 );
 
 export default router;

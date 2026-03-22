@@ -17,6 +17,7 @@ export interface AuthRequest extends Request {
     email: string;
     username: string;
     role?: string;
+    entity_id?: string;
   };
   file?: Express.Multer.File;
   files?: Express.Multer.File[];
@@ -27,6 +28,7 @@ export interface JWTPayload {
   email: string;
   username: string;
   role?: string;
+  entity_id?: string;
 }
 
 export interface RegisterDTO {

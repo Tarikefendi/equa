@@ -85,26 +85,29 @@ export class AuthController {
   async getProfile(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: 'Unauthorized',
-        });
+        res.status(401).json({ success: false, message: 'Unauthorized' });
         return;
       }
-
       const profile = await authService.getProfile(req.user.id);
-
-      res.status(200).json({
-        success: true,
-        message: 'Profile retrieved successfully',
-        data: profile,
-      });
+      res.status(200).json({ success: true, data: profile });
     } catch (error) {
       logger.error('Get profile error:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to get profile',
-      });
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to get profile' });
+    }
+  }
+
+  async updateProfile(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ success: false, message: 'Unauthorized' });
+        return;
+      }
+      const { is_public } = req.body;
+      const updated = await authService.updateProfile(req.user.id, { is_public });
+      res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+      logger.error('Update profile error:', error);
+      res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Failed to update profile' });
     }
   }
 

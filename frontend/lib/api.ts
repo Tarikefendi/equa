@@ -29,6 +29,11 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // Always read token fresh from localStorage to handle post-login state
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('token');
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
@@ -86,8 +91,31 @@ class ApiClient {
   }
 
   async getProfile() {
+    return this.request('/auth/profile', { method: 'GET' });
+  }
+
+  async updateProfile(data: { is_public?: boolean }) {
     return this.request('/auth/profile', {
-      method: 'GET',
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getReputationEvents() {
+    return this.request('/auth/reputation/events', { method: 'GET' });
+  }
+
+  async forgotPassword(email: string) {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
     });
   }
 
@@ -121,6 +149,18 @@ class ApiClient {
     return this.request(`/campaigns/${id}`);
   }
 
+  async recordCampaignView(id: string) {
+    return this.request(`/campaigns/${id}/view`, { method: 'POST' });
+  }
+
+  async getTrendingCampaigns() {
+    return this.request('/campaigns/trending');
+  }
+
+  async searchCampaigns(query: string, sort: string = 'relevant') {
+    return this.request(`/campaigns/search?q=${encodeURIComponent(query)}&sort=${sort}`);
+  }
+
   async createCampaign(data: any, deviceFingerprint?: string | null) {
     const body = { ...data };
     if (deviceFingerprint) {
@@ -140,7 +180,11 @@ class ApiClient {
   }
 
   async getMyCampaigns() {
-    return this.request('/campaigns/my');
+    return this.request('/campaigns/my/campaigns');
+  }
+
+  async getMySignatures() {
+    return this.request('/signatures/my-signatures');
   }
 
   // Signatures
@@ -160,18 +204,7 @@ class ApiClient {
     });
   }
 
-  // Reports
-  async reportCampaign(campaignId: string, reason: string, details: string) {
-    return this.request('/reports', {
-      method: 'POST',
-      body: JSON.stringify({
-        entity_type: 'campaign',
-        entity_id: campaignId,
-        reason,
-        details,
-      }),
-    });
-  }
+
 
   // Uploads
   async uploadFile(file: File, entityType: string, entityId: string) {
@@ -238,10 +271,6 @@ class ApiClient {
     return this.request(`/signatures/campaign/${campaignId}/my-signature`);
   }
 
-  async getMySignatures() {
-    return this.request('/signatures/my-signatures');
-  }
-
   // Organization responses
   async sendToOrganization(campaignId: string) {
     return this.request(`/campaigns/${campaignId}/send-to-organization`, {
@@ -257,6 +286,236 @@ class ApiClient {
   // Get email history
   async getEmailHistory(campaignId: string) {
     return this.request(`/campaigns/${campaignId}/email-history`);
+  }
+
+  // Campaign updates
+  async getCampaignUpdates(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/updates`);
+  }
+
+  async addCampaignUpdate(campaignId: string, content: string, title?: string, source_url?: string) {
+    return this.request(`/campaigns/${campaignId}/updates`, {
+      method: 'POST',
+      body: JSON.stringify({ content, title, source_url }),
+    });
+  }
+
+  async addOfficialResponse(campaignId: string, content: string, title?: string, source_url?: string) {
+    return this.request(`/campaigns/${campaignId}/updates/official-response`, {
+      method: 'POST',
+      body: JSON.stringify({ content, title, source_url }),
+    });
+  }
+
+  async editCampaignUpdate(campaignId: string, updateId: number, content: string, title?: string, source_url?: string, reason?: string) {
+    return this.request(`/campaigns/${campaignId}/updates/${updateId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content, title, source_url, reason }),
+    });
+  }
+
+  async getCampaignUpdateHistory(campaignId: string, updateId: number) {
+    return this.request(`/campaigns/${campaignId}/updates/${updateId}/history`);
+  }
+
+  async deleteCampaignUpdate(campaignId: string, updateId: number) {
+    return this.request(`/campaigns/${campaignId}/updates/${updateId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Entities
+  async searchEntities(query: string) {
+    return this.request(`/entities/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async getEntityBySlug(slug: string) {
+    return this.request(`/entities/${slug}`);
+  }
+
+  async getMostActiveEntities() {
+    return this.request('/entities/most-active');
+  }
+
+  async getCampaignEvidence(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/evidence`);
+  }
+
+  async getPendingEvidence(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/evidence/pending`);
+  }
+
+  async addCampaignEvidence(campaignId: string, data: { type: string; title: string; description?: string; url?: string; credibility_type?: string }) {
+    return this.request(`/campaigns/${campaignId}/evidence`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateEvidenceStatus(campaignId: string, evidenceId: string, status: 'approved' | 'rejected') {
+    return this.request(`/campaigns/${campaignId}/evidence/${evidenceId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async deleteCampaignEvidence(campaignId: string, evidenceId: string) {
+    return this.request(`/campaigns/${campaignId}/evidence/${evidenceId}`, { method: 'DELETE' });
+  }
+
+  async createEntity(data: { name: string; type?: string; description?: string; website?: string; country?: string }) {
+    return this.request('/entities', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getEntityFollowStatus(slug: string) {
+    return this.request(`/entities/${slug}/follow`);
+  }
+
+  async getEntityMetrics(slug: string) {
+    return this.request(`/entities/${slug}/metrics`);
+  }
+
+  async followEntity(slug: string) {
+    return this.request(`/entities/${slug}/follow`, { method: 'POST' });
+  }
+
+  async unfollowEntity(slug: string) {
+    return this.request(`/entities/${slug}/follow`, { method: 'DELETE' });
+  }
+
+  async updateCampaignStatus(campaignId: string, status: string, description?: string) {
+    return this.request(`/campaigns/${campaignId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, description }),
+    });
+  }
+
+  async getCampaignStatusHistory(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/status-history`);
+  }
+
+  async getSimilarCampaigns(query: string) {
+    return this.request(`/campaigns/similar?query=${encodeURIComponent(query)}`);
+  }
+
+  async recordCampaignShare(campaignId: string, platform: string) {
+    return this.request(`/campaigns/${campaignId}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ platform }),
+    });
+  }
+
+  async getCampaignShareStats(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/share-stats`);
+  }
+
+  async resolveCampaign(campaignId: string, reason?: string) {
+    return this.request(`/campaigns/${campaignId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async closeCampaign(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/close`, {
+      method: 'POST',
+    });
+  }
+
+  async getCampaignImpact(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/impact`);
+  }
+
+  async getEvidenceSummary(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/evidence-summary`);
+  }
+
+  async approveEvidence(evidenceId: string) {
+    return this.request(`/campaigns/evidence/${evidenceId}/approve`, { method: 'POST' });
+  }
+
+  async rejectEvidence(evidenceId: string) {
+    return this.request(`/campaigns/evidence/${evidenceId}/reject`, { method: 'POST' });
+  }
+
+  async flagEvidence(evidenceId: string) {
+    return this.request(`/campaigns/evidence/${evidenceId}/flag`, { method: 'POST' });
+  }
+
+  async getFlaggedEvidence() {
+    return this.request('/admin/flagged-evidence');
+  }
+
+  // Standards Library
+  async getStandardCategories() {
+    return this.request('/standards/categories');
+  }
+
+  async getStandards(categoryId?: number) {
+    const params = categoryId ? `?category_id=${categoryId}` : '';
+    return this.request(`/standards${params}`);
+  }
+
+  async suggestStandard(data: { title: string; description?: string; category_id?: number; source_url?: string }) {
+    return this.request('/standards/suggest', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getStandardSuggestions(status?: string) {
+    const params = status ? `?status=${status}` : '';
+    return this.request(`/admin/standard-suggestions${params}`);
+  }
+
+  async reviewStandardSuggestion(id: number, status: 'approved' | 'rejected') {
+    return this.request(`/admin/standard-suggestions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async submitCampaignReport(campaignId: string, reason: string, description?: string) {
+    return this.request(`/campaigns/${campaignId}/report`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, description }),
+    });
+  }
+
+  async getUserCampaignReport(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/report`);
+  }
+
+  async getCampaignReports() {
+    return this.request('/admin/campaign-reports');
+  }
+
+  async updateCampaignReportStatus(reportId: string, status: string) {
+    return this.request(`/admin/campaign-reports/${reportId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getFollowStatus(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/follow`);
+  }
+
+  async followCampaign(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/follow`, { method: 'POST' });
+  }
+
+  async unfollowCampaign(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/follow`, { method: 'DELETE' });
+  }
+
+  async togglePinCampaignUpdate(campaignId: string, updateId: number) {
+    return this.request(`/campaigns/${campaignId}/updates/${updateId}/pin`, {
+      method: 'PATCH',
+    });
   }
 
   // Organization responses
@@ -378,11 +637,125 @@ class ApiClient {
     return this.request(`/admin/reports/pending${params}`);
   }
 
+  async getPendingLawyers() {
+    return this.request('/admin/lawyers/pending');
+  }
+
+  async verifyLawyer(lawyerId: string) {
+    return this.request(`/admin/lawyers/${lawyerId}/verify`, { method: 'POST' });
+  }
+
+  async rejectLawyer(lawyerId: string) {
+    return this.request(`/admin/lawyers/${lawyerId}/reject`, { method: 'POST' });
+  }
+
+  async getAdminEntities() {
+    return this.request('/admin/entities');
+  }
+
+  async verifyEntity(entityId: string) {
+    return this.request(`/admin/entities/${entityId}/verify`, { method: 'POST' });
+  }
+
+  async unverifyEntity(entityId: string) {
+    return this.request(`/admin/entities/${entityId}/unverify`, { method: 'POST' });
+  }
+
+  async getVoteStats(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/votes`);
+  }
+
+  async castVote(campaignId: string, choice: string) {
+    return this.request(`/campaigns/${campaignId}/votes`, { method: 'POST', body: JSON.stringify({ choice }) });
+  }
+
+  async getComments(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/comments`);
+  }
+
+  async createComment(campaignId: string, content: string) {
+    return this.request(`/campaigns/${campaignId}/comments`, { method: 'POST', body: JSON.stringify({ content }) });
+  }
+
+  async isFollowingCampaign(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/follow`);
+  }
+
+  async getFollowerCount(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/follow`);
+  }
+
   async updateReportStatus(reportId: string, status: string, resolution?: string) {
     return this.request(`/admin/reports/${reportId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status, resolution }),
     });
+  }
+
+  async getCampaignVictory(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/victory`);
+  }
+
+  async getCampaignMomentum(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/momentum`);
+  }
+
+  async getCampaignMilestone(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/milestone`);
+  }
+
+  // Investigation Mode
+  async toggleInvestigationMode(campaignId: string, enabled: boolean) {    return this.request(`/campaigns/${campaignId}/investigation-mode`, {
+      method: 'PATCH',
+      body: JSON.stringify({ investigation_mode: enabled }),
+    });
+  }
+
+  async getInvestigationSummary(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/investigation-summary`);
+  }
+
+  // Transparency Score
+  async getEntityTransparencyScore(slug: string) {
+    return this.request(`/entities/${slug}/transparency-score`);
+  }
+
+  // Lawyer Marketplace
+  async getCampaignLegalStatus(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/legal-status`);
+  }
+
+  async requestLegalSupport(campaignId: string) {
+    return this.request(`/campaigns/${campaignId}/legal-request`, { method: 'POST' });
+  }
+
+  async getOpenLegalRequests() {
+    return this.request('/legal-requests');
+  }
+
+  async applyToLegalRequest(requestId: string) {
+    return this.request(`/legal-requests/${requestId}/apply`, { method: 'POST' });
+  }
+
+  async registerAsLawyer(data: { full_name: string; expertise: string; bar_number?: string; city?: string; bio?: string }) {
+    return this.request('/lawyers/register', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async getMyLawyerProfile() {
+    return this.request('/lawyers/me');
+  }
+
+  // Admin: Lawyer management
+  async getPendingLawyers() {
+    return this.request('/admin/lawyers/pending');
+  }
+
+  async verifyLawyer(lawyerId: string) {
+    return this.request(`/admin/lawyers/${lawyerId}/verify`, { method: 'POST' });
+  }
+
+  async rejectLawyer(lawyerId: string) {
+    return this.request(`/admin/lawyers/${lawyerId}/reject`, { method: 'POST' });
   }
 
 }

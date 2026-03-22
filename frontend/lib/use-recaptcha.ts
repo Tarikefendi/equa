@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+const IS_VALID_KEY = RECAPTCHA_SITE_KEY && !RECAPTCHA_SITE_KEY.includes('your_') && RECAPTCHA_SITE_KEY.length > 10;
 
 declare global {
   interface Window {
@@ -12,9 +13,8 @@ export function useRecaptcha() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Skip if no site key
-    if (!RECAPTCHA_SITE_KEY) {
-      console.warn('⚠️ reCAPTCHA site key not configured');
+    // Skip if no valid site key
+    if (!IS_VALID_KEY) {
       setIsLoaded(true);
       return;
     }
@@ -41,9 +41,13 @@ export function useRecaptcha() {
   }, []);
 
   const executeRecaptcha = async (action: string): Promise<string | null> => {
-    // Always skip in development
-    console.log('⚠️ reCAPTCHA skipped in development mode');
-    return null;
+    if (!IS_VALID_KEY) return null;
+    try {
+      if (!window.grecaptcha) return null;
+      return await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+    } catch {
+      return null;
+    }
   };
 
   return { isLoaded, executeRecaptcha };

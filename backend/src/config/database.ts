@@ -1,15 +1,18 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import dotenv from 'dotenv';
+import { Pool } from 'pg'
+import dotenv from 'dotenv'
 
-dotenv.config();
+dotenv.config()
 
-const dbPath = path.join(process.cwd(), 'database.sqlite');
-const db: Database.Database = new Database(dbPath);
+const pool = new Pool({
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'boykot_db',
+  password: process.env.DB_PASSWORD || 'postgres',
+  port: Number(process.env.DB_PORT) || 5432,
+})
 
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
+pool.connect()
+  .then(() => console.log('✅ PostgreSQL connected'))
+  .catch(err => console.error('❌ PostgreSQL connection error:', err))
 
-console.log('✅ SQLite database connected:', dbPath);
-
-export default db;
+export default pool

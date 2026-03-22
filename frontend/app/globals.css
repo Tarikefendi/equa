@@ -58,20 +58,16 @@
 }
 
 /* Base Styles */
-* {
-  border-color: var(--border-color);
-}
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: #ffffff;
+  color: #0f172a;
   font-size: 14px;
   line-height: 1.5;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 html {
-  transition: background-color 0.2s ease;
+  background-color: #ffffff;
 }
 
 /* Custom Scrollbar */
@@ -94,6 +90,18 @@ html {
 }
 
 /* Smooth Animations */
+/* Hide reCAPTCHA badge */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide reCAPTCHA iframe container that can block clicks */
+iframe[src*="recaptcha"] {
+  pointer-events: none !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

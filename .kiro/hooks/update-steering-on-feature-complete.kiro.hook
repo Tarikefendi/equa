@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Steering Güncelle",
+  "description": "Bir özellik tamamlandığında project-context.md steering dosyasını otomatik günceller",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Bu oturumda yeni bir özellik tamamlandıysa, .kiro/steering/project-context.md dosyasını güncelle. Sadece \"Tamamlanan Özellikler\" bölümüne yeni eklenen özelliği ekle ve varsa yeni API endpoint'lerini, DB tablolarını da ilgili bölümlere ekle. Eğer bu oturumda anlamlı bir özellik tamamlanmadıysa hiçbir şey yapma."
+  }
+}

@@ -1,12 +1,5 @@
-const Database = require('better-sqlite3');
-const db = new Database('./database.sqlite');
-
-console.log('=== USERS TABLOSU YAPISI ===\n');
-
-const schema = db.prepare("PRAGMA table_info(users)").all();
-
-schema.forEach(col => {
-  console.log(`${col.name} - ${col.type} ${col.notnull ? '(NOT NULL)' : ''} ${col.pk ? '(PRIMARY KEY)' : ''}`);
-});
-
-db.close();
+const { Pool } = require('pg');
+const pool = new Pool({ host: 'localhost', port: 5432, database: 'boykot_db', user: 'postgres', password: '1627' });
+pool.query("SELECT column_name, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'campaign_updates'")
+  .then(r => { r.rows.forEach(c => console.log(c.column_name, '| nullable:', c.is_nullable, '| default:', c.column_default)); pool.end(); })
+  .catch(e => { console.error(e.message); pool.end(); });
