@@ -150,7 +150,8 @@ export class CampaignService {
       SELECT c.*,
              u.username as creator_username,
              (SELECT COUNT(*) FROM votes WHERE campaign_id = c.id) as vote_count,
-             (SELECT COUNT(*) FROM signatures WHERE campaign_id = c.id) as signature_count
+             (SELECT COUNT(*) FROM signatures WHERE campaign_id = c.id) as signature_count,
+             (SELECT COUNT(*) FROM signatures WHERE campaign_id = c.id) as support_count
       FROM campaigns c
       LEFT JOIN users u ON c.creator_id = u.id
       WHERE 1=1

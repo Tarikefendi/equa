@@ -32,11 +32,15 @@ const createCampaignValidation = [
   body('category').notEmpty().withMessage('Category is required'),
 ];
 
-// Public routes
+// Public routes (static routes must come before dynamic /:id)
 router.get('/', (req: AuthRequest, res: Response) => campaignController.getCampaigns(req, res));
 router.get('/trending', (req: AuthRequest, res: Response) => campaignController.getTrendingCampaigns(req, res));
 router.get('/similar', (req: AuthRequest, res: Response) => campaignController.getSimilarCampaigns(req, res));
 router.get('/search', (req: AuthRequest, res: Response) => campaignController.searchCampaigns(req, res));
+router.get('/my/campaigns', authenticate, (req: AuthRequest, res: Response) => 
+  campaignController.getMyCampaigns(req, res)
+);
+
 router.get('/:id', optionalAuth, (req: AuthRequest, res: Response) => campaignController.getCampaignById(req, res));
 
 // Protected routes
@@ -50,10 +54,6 @@ router.put('/:id', authenticate, (req: AuthRequest, res: Response) =>
 
 router.delete('/:id', authenticate, (req: AuthRequest, res: Response) => 
   campaignController.deleteCampaign(req, res)
-);
-
-router.get('/my/campaigns', authenticate, (req: AuthRequest, res: Response) => 
-  campaignController.getMyCampaigns(req, res)
 );
 
 router.post('/:id/send-to-organization', authenticate, (req: AuthRequest, res: Response) => 
