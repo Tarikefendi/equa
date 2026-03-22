@@ -745,18 +745,6 @@ class ApiClient {
     return this.request('/lawyers/me');
   }
 
-  // Admin: Lawyer management
-  async getPendingLawyers() {
-    return this.request('/admin/lawyers/pending');
-  }
-
-  async verifyLawyer(lawyerId: string) {
-    return this.request(`/admin/lawyers/${lawyerId}/verify`, { method: 'POST' });
-  }
-
-  async rejectLawyer(lawyerId: string) {
-    return this.request(`/admin/lawyers/${lawyerId}/reject`, { method: 'POST' });
-  }
 
 }
 
