@@ -108,39 +108,59 @@ export default function CampaignDetailPage() {
 
   useEffect(() => {
     if (params.id) {
-      loadCampaign();
-      loadSignatures();
-      loadStatusUpdates();
+      loadDetail();
       loadCampaignUpdates();
-      loadFollowStatus();
       loadStructuredEvidence();
       loadStatusHistory();
       if (user) {
-        loadUserSignature();
         loadPendingEvidence();
         loadUserReport();
       }
     }
   }, [params.id, user]);
 
+  const loadDetail = async () => {
+    try {
+      const res: any = await api.getCampaignDetail(params.id as string);
+      if (res.success && res.data) {
+        const { campaign, momentum: m, milestone: ms, recent_signatures, user: userData, victory } = res.data;
+        if (campaign.evidence && typeof campaign.evidence === 'string') {
+          campaign.evidence = JSON.parse(campaign.evidence);
+        }
+        setCampaign(campaign);
+        setSignatureCount(campaign.support_count || 0);
+        setSignatures(recent_signatures || []);
+        setMomentum(m || null);
+        setMilestone(ms || null);
+        setIsFollowing(userData?.is_following || false);
+        setFollowerCount(campaign.followers_count || 0);
+        if (userData?.signature) setUserSignature(userData.signature);
+        if (victory?.is_victory) setVictoryData(victory);
+
+        // Non-critical: entity metrics + transparency (fire and forget)
+        if (campaign.entity_slug) {
+          (api.getEntityMetrics(campaign.entity_slug) as Promise<any>)
+            .then((r: any) => { if (r.data?.metrics_available) setEntityMetrics(r.data); })
+            .catch(() => {});
+          (api.getEntityTransparencyScore(campaign.entity_slug) as Promise<any>)
+            .then((r: any) => { if (r.data?.transparency_score != null) setTransparencyScore(r.data); })
+            .catch(() => {});
+        }
+        if (campaign.investigation_mode) loadInvestigationSummary();
+        loadLegalStatus();
+        api.recordCampaignView(params.id as string).catch(() => {});
+      }
+    } catch (error) {
+      console.error('Failed to load campaign:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadVictory = async () => {
     try {
       const res: any = await api.getCampaignVictory(params.id as string);
       if (res.success && res.data?.is_victory) setVictoryData(res.data);
-    } catch {}
-  };
-
-  const loadMomentum = async () => {
-    try {
-      const res: any = await api.getCampaignMomentum(params.id as string);
-      if (res.success) setMomentum(res.data);
-    } catch {}
-  };
-
-  const loadMilestone = async () => {
-    try {
-      const res: any = await api.getCampaignMilestone(params.id as string);
-      if (res.success) setMilestone(res.data);
     } catch {}
   };
 
@@ -155,54 +175,6 @@ export default function CampaignDetailPage() {
     try {
       const res: any = await api.getInvestigationSummary(params.id as string);
       if (res.success) setInvestigationSummary(res.data);
-    } catch {}
-  };
-
-  const loadCampaign = async () => {
-    try {
-      const response: any = await api.getCampaignById(params.id as string);
-      if (response.success && response.data) {
-        if (response.data.evidence && typeof response.data.evidence === 'string') {
-          response.data.evidence = JSON.parse(response.data.evidence);
-        }
-        setCampaign(response.data);
-        api.recordCampaignView(params.id as string).catch(() => {});
-        if (response.data.entity_slug) {
-          (api.getEntityMetrics(response.data.entity_slug) as Promise<any>)
-            .then((res: any) => { if (res.data?.metrics_available) setEntityMetrics(res.data); })
-            .catch(() => {});
-          (api.getEntityTransparencyScore(response.data.entity_slug) as Promise<any>)
-            .then((res: any) => { if (res.data?.transparency_score != null) setTransparencyScore(res.data); })
-            .catch(() => {});
-        }
-        if (response.data.investigation_mode) loadInvestigationSummary();
-        if (response.data.status === 'resolved') loadVictory();
-        loadMomentum();
-        loadMilestone();
-        loadLegalStatus();
-      }
-    } catch (error) {
-      console.error('Failed to load campaign:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadSignatures = async () => {
-    try {
-      const [signaturesRes, countRes]: any = await Promise.all([
-        api.getCampaignSignatures(params.id as string),
-        api.getSignatureCount(params.id as string),
-      ]);
-      if (signaturesRes.success) setSignatures(signaturesRes.data || []);
-      if (countRes.success) setSignatureCount(countRes.data?.count || 0);
-    } catch {}
-  };
-
-  const loadUserSignature = async () => {
-    try {
-      const response: any = await api.getUserSignature(params.id as string);
-      if (response.success && response.data) setUserSignature(response.data);
     } catch {}
   };
 
@@ -234,23 +206,10 @@ export default function CampaignDetailPage() {
     } catch {}
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const loadStatusUpdates = async () => { try { await api.getStatusUpdates(params.id as string); } catch {} };
-
   const loadCampaignUpdates = async () => {
     try {
       const response: any = await api.getCampaignUpdates(params.id as string);
       if (response.success) setCampaignUpdates(response.data || []);
-    } catch {}
-  };
-
-  const loadFollowStatus = async () => {
-    try {
-      const response: any = await api.getFollowStatus(params.id as string);
-      if (response.success) {
-        setIsFollowing(response.data?.following || false);
-        setFollowerCount(response.data?.count || 0);
-      }
     } catch {}
   };
 
@@ -360,7 +319,7 @@ export default function CampaignDetailPage() {
     setStatusUpdating(true); setStatusMessage(null);
     try {
       const res: any = await api.updateCampaignStatus(params.id as string, newStatus, statusDescription || undefined);
-      await loadCampaign();
+      await loadDetail();
       loadCampaignUpdates();
       setPendingStatus(null); setStatusDescription('');
       if (res.data?.daily_changes_remaining !== undefined) setDailyChangesRemaining(res.data.daily_changes_remaining);
@@ -378,7 +337,7 @@ export default function CampaignDetailPage() {
     setShowArchiveConfirm(false); setStatusUpdating(true);
     try {
       await api.updateCampaignStatus(params.id as string, 'archived', statusDescription || undefined);
-      await loadCampaign(); loadCampaignUpdates(); setStatusDescription('');
+      await loadDetail(); loadCampaignUpdates(); setStatusDescription('');
       setStatusMessage('Kampanya arşivlendi. 24 saat içinde geri alabilirsiniz.');
       setTimeout(() => setStatusMessage(null), 8000);
     } catch (error: any) {
@@ -393,7 +352,7 @@ export default function CampaignDetailPage() {
     setStatusUpdating(true);
     try {
       await api.updateCampaignStatus(params.id as string, 'active');
-      await loadCampaign(); loadCampaignUpdates();
+      await loadDetail(); loadCampaignUpdates();
       setStatusMessage('Arşivleme geri alındı.');
       setTimeout(() => setStatusMessage(null), 6000);
     } catch (error: any) {
@@ -408,9 +367,12 @@ export default function CampaignDetailPage() {
     setSignatureLoading(true);
     try {
       const deviceFingerprint = await getFingerprint();
-      await api.addSignature(params.id as string, signatureMessage, isAnonymous, deviceFingerprint);
+      const res: any = await api.addSignature(params.id as string, signatureMessage, isAnonymous, deviceFingerprint);
       setShowSignatureModal(false); setSignatureMessage(''); setIsAnonymous(false);
-      loadSignatures(); loadUserSignature();
+      // Update counts locally for instant feedback
+      setSignatureCount(prev => prev + 1);
+      setUserSignature(res.data || { id: 'temp' });
+      setMomentum((prev: any) => prev ? { ...prev, today_supporters: (prev.today_supporters || 0) + 1, total_supporters: (prev.total_supporters || 0) + 1 } : prev);
       setShowShareCard(true);
     } catch (error: any) {
       alert(error.message || 'İşlem başarısız');
@@ -423,7 +385,8 @@ export default function CampaignDetailPage() {
     if (!confirm('Desteğinizi geri çekmek istediğinizden emin misiniz?')) return;
     try {
       await api.removeSignature(params.id as string);
-      setUserSignature(null); loadSignatures();
+      setUserSignature(null);
+      setSignatureCount(prev => Math.max(0, prev - 1));
     } catch (error: any) {
       alert(error.message || 'İşlem başarısız');
     }

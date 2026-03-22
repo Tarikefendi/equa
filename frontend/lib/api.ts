@@ -151,6 +151,10 @@ class ApiClient {
     return this.request(`/campaigns/${id}`);
   }
 
+  async getCampaignDetail(id: string) {
+    return this.request(`/campaigns/${id}/detail`);
+  }
+
   async recordCampaignView(id: string) {
     return this.request(`/campaigns/${id}/view`, { method: 'POST' });
   }

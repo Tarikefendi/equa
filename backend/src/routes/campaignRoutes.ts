@@ -8,6 +8,7 @@ import { CampaignShareController } from '../controllers/campaignShareController'
 import { CampaignClosureController } from '../controllers/campaignClosureController';
 import { EvidenceModerationController } from '../controllers/evidenceModerationController';
 import { CampaignInvestigationController } from '../controllers/campaignInvestigationController';
+import { CampaignAggregateController } from '../controllers/campaignAggregateController';
 import { authenticate, optionalAuth } from '../middleware/auth';
 
 import { body } from 'express-validator';
@@ -23,6 +24,7 @@ const shareController = new CampaignShareController();
 const closureController = new CampaignClosureController();
 const evidenceModerationController = new EvidenceModerationController();
 const investigationController = new CampaignInvestigationController();
+const aggregateController = new CampaignAggregateController();
 
 const createCampaignValidation = [
   body('title').isLength({ min: 5, max: 500 }).withMessage('Title must be 5-500 characters'),
@@ -41,6 +43,7 @@ router.get('/my/campaigns', authenticate, (req: AuthRequest, res: Response) =>
   campaignController.getMyCampaigns(req, res)
 );
 
+router.get('/:id/detail', optionalAuth, (req: AuthRequest, res: Response) => aggregateController.getDetail(req, res));
 router.get('/:id', optionalAuth, (req: AuthRequest, res: Response) => campaignController.getCampaignById(req, res));
 
 // Protected routes
