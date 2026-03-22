@@ -383,6 +383,19 @@ async function main() {
     )
   `);
 
+  await run('activity_logs tablosu', `
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      action_type TEXT NOT NULL,
+      entity_type TEXT,
+      entity_id TEXT,
+      details JSONB DEFAULT '{}',
+      ip_address TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
   await run('email_history tablosu', `
     CREATE TABLE IF NOT EXISTS email_history (
       id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,

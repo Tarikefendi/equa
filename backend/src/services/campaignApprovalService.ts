@@ -45,8 +45,13 @@ export class CampaignApprovalService {
     status: 'active' | 'under_review' | 'draft';
     reason: string;
   }> {
-    const user = (await pool.query('SELECT reputation_score FROM users WHERE id = $1', [userId])).rows[0];
+    const user = (await pool.query('SELECT reputation_score, role FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) throw new Error('User not found');
+
+    // Admin ve moderatörler direkt active
+    if (user.role === 'admin' || user.role === 'moderator') {
+      return { status: 'active', reason: 'Auto-approved: Admin/Moderator user' };
+    }
 
     const reputation = user.reputation_score || 0;
 
