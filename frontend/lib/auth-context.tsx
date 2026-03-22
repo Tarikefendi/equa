@@ -20,7 +20,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      // Check if token exists before making request
       const token = localStorage.getItem('token');
       if (!token) {
         setUser(null);
@@ -31,10 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.data) {
         setUser(response.data);
       }
-    } catch (error) {
-      setUser(null);
-      // Clear invalid token
-      localStorage.removeItem('token');
+    } catch (error: any) {
+      // Sadece 401 (geçersiz/süresi dolmuş token) durumunda çıkış yap
+      // Network hatası veya sunucu hatalarında token'ı silme
+      const status = error?.status || error?.response?.status;
+      const message = error?.message || '';
+      const isAuthError = status === 401 || message.includes('401') || message.includes('Unauthorized') || message.includes('Invalid token') || message.includes('jwt');
+      
+      if (isAuthError) {
+        setUser(null);
+        localStorage.removeItem('token');
+      }
+      // Diğer hatalarda (500, network vb.) mevcut user state'i koru
     }
   };
 

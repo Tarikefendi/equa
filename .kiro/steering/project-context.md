@@ -502,6 +502,22 @@ GET    /admin/lawyers/pending
 POST   /admin/lawyers/:lawyerId/verify
 ```
 
+## Production Deployment
+
+- **Platform:** Backend → Railway, Frontend → Vercel
+- **Railway backend URL:** `https://equa-production.up.railway.app`
+- **Vercel frontend URL:** `https://equa-three.vercel.app`
+- **Railway DB public URL:** `postgresql://postgres:NSHFlKGPWDinJSTbhVaPzVfTSUsVKlAj@caboose.proxy.rlwy.net:28741/railway`
+- **Railway DB internal URL:** `postgresql://postgres:NSHFlKGPWDinJSTbhVaPzVfTSUsVKlAj@postgres.railway.internal:5432/railway` (sadece Railway servisleri)
+- **Vercel env:** `NEXT_PUBLIC_API_URL=https://equa-production.up.railway.app/api/v1`
+- **Railway env:** `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN`, `NODE_ENV=production`
+
+### Migration Scripti
+- `backend/migrate-all.js` — tüm tabloları ve kolonları `IF NOT EXISTS` ile oluşturur, güvenle tekrar çalıştırılabilir
+- Local: `node migrate-all.js`
+- Railway: `DATABASE_URL=postgresql://...@caboose.proxy.rlwy.net:28741/railway node migrate-all.js`
+- Yeni özellik deploy edildiğinde bu script Railway'de çalıştırılmalı
+
 ## Notlar (İleride Eklenebilir)
 
 ## Kod Yazma Kuralları

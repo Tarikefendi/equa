@@ -1,6 +1,9 @@
 const { Pool } = require('pg');
-require('dotenv').config({ path: './.env' });
-const pool = new Pool({ host: process.env.DB_HOST, port: parseInt(process.env.DB_PORT), database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD });
-pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'campaigns'")
-  .then(r => { console.log(r.rows.map(x => x.column_name).join(', ')); pool.end(); })
-  .catch(e => { console.error(e.message); pool.end(); });
+const p = new Pool({
+  connectionString: 'postgresql://postgres:NSHFlKGPWDinJSTbhVaPzVfTSUsVKlAj@caboose.proxy.rlwy.net:28741/railway',
+  ssl: { rejectUnauthorized: false }
+});
+
+p.query("SELECT column_name FROM information_schema.columns WHERE table_name='campaigns' ORDER BY column_name")
+  .then(r => { console.log(r.rows.map(x => x.column_name).join(', ')); p.end(); })
+  .catch(e => { console.error(e.message); p.end(); });
