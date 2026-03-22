@@ -20,7 +20,16 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowed = process.env.CORS_ORIGIN || '*';
+    if (allowed === '*' || !origin) return callback(null, true);
+    const origins = allowed.split(',').map(o => o.trim());
+    if (origins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

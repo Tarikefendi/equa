@@ -14,22 +14,25 @@ export class AuthController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        const fieldErrors = errors.array().map((e: any) => ({
+          field: e.path || e.param || 'unknown',
+          message: e.msg,
+        }));
         res.status(400).json({
           success: false,
-          message: 'Validation failed',
-          errors: errors.array(),
+          message: fieldErrors[0]?.message || 'Validation failed',
+          errors: fieldErrors,
         });
         return;
       }
 
-      // Extract IP and device fingerprint
       const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
       const deviceFingerprint = req.body.deviceFingerprint;
 
       const result = await authService.register({
         ...req.body,
         ipAddress,
-        deviceFingerprint
+        deviceFingerprint,
       });
 
       res.status(201).json({
@@ -39,9 +42,10 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Registration error:', error);
+      const message = error instanceof Error && error.message ? error.message : 'Registration failed';
       res.status(400).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Registration failed',
+        message,
       });
     }
   }
@@ -50,10 +54,14 @@ export class AuthController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        const fieldErrors = errors.array().map((e: any) => ({
+          field: e.path || e.param || 'unknown',
+          message: e.msg,
+        }));
         res.status(400).json({
           success: false,
-          message: 'Validation failed',
-          errors: errors.array(),
+          message: fieldErrors[0]?.message || 'Validation failed',
+          errors: fieldErrors,
         });
         return;
       }
@@ -75,9 +83,10 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Login error:', error);
+      const message = error instanceof Error && error.message ? error.message : 'Invalid email or password';
       res.status(401).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Login failed',
+        message,
       });
     }
   }

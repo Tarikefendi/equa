@@ -50,7 +50,12 @@ export default function RegisterPage() {
         window.location.href = '/';
       }
     } catch (err: any) {
-      setError(err.message || 'Kayıt başarısız');
+      // Show first field error if available, otherwise fallback to message
+      if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+        setError(err.errors[0].message || err.message || 'Kayıt başarısız');
+      } else {
+        setError(err.message || 'Kayıt başarısız');
+      }
     } finally {
       setLoading(false);
     }
